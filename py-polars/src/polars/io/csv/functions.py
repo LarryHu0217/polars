@@ -1084,20 +1084,6 @@ def scan_csv(
         )
         raise ValueError(msg)
 
-    if schema_overrides and isinstance(schema_overrides, Sequence):
-        if not new_columns:
-            msg = "passing sequence for `schema_overrides` requires specifying `new_columns`"
-            raise TypeError(msg)
-
-        elif len(schema_overrides) != len(new_columns):
-            msg = (
-                "different number of items passed for `schema_overrides` and `new_columns` "
-                f"({len(schema_overrides)} != {len(new_columns)})"
-            )
-            raise ShapeError(msg)
-
-        schema_overrides = dict(zip(new_columns, schema_overrides, strict=True))
-
     _check_arg_is_1byte("separator", separator, can_be_empty=False)
     _check_arg_is_1byte("quote_char", quote_char, can_be_empty=True)
 
