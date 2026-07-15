@@ -681,3 +681,16 @@ def test_scan_csv_count_rows_async_with_schema(
     schema = pl.Schema({"a": pl.Int64})
     out = pl.scan_csv(file_path, schema=schema).select(pl.len()).collect()
     assert out.item() == 10
+
+
+def test_scan_csv_with_schema_respects_file_column_order() -> None:
+    assert_frame_equal(
+        pl.scan_csv(
+            b"""\
+b,a
+B,A
+""",
+            schema={"a": pl.String, "b": pl.String},
+        ).collect(),
+        pl.DataFrame({"a": "A", "b": "B"}),
+    )
