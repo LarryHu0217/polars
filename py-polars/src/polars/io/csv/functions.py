@@ -1199,7 +1199,7 @@ def _scan_csv_impl(
     empty_string_is_null: bool = True,
     ignore_errors: bool = False,
     cache: bool = True,
-    new_columns: list[str] | None = None,
+    new_columns: Sequence[str] | None = None,
     with_column_names: Callable[[list[str]], list[str]] | None = None,
     infer_schema_length: int | None = N_INFER_DEFAULT,
     n_rows: int | None = None,
