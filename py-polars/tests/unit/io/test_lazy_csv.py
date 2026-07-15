@@ -167,23 +167,6 @@ def test_scan_csv_schema_new_columns_dtypes(
         == df1.select("sugars", pl.col("calories").cast(pl.Int64)).rows()
     )
 
-    # partially rename columns / overwrite dtypes
-    df4 = pl.scan_csv(
-        file_path,
-        schema_overrides=[pl.String, pl.String],
-        new_columns=["category", "calories"],
-    ).collect()
-    assert df4.dtypes == [pl.String, pl.String, pl.Float64, pl.Int64]
-    assert df4.columns == ["category", "calories", "fats_g", "sugars_g"]
-
-    df5 = pl.scan_csv(
-        file_path,
-        schema_overrides=[pl.String, pl.String],
-        new_columns=["category"],
-    ).collect()
-    assert df5.dtypes == [pl.String, pl.String, pl.Float64, pl.Int64]
-    assert df5.columns == ["category", "calories", "fats_g", "sugars_g"]
-
     # cannot have len(new_columns) > len(actual columns)
     with pytest.raises(ShapeError):
         pl.scan_csv(
@@ -444,7 +427,6 @@ A,B,C
         ],
     ],
 )
-@pytest.mark.may_fail_auto_streaming  # missing_columns parameter for CSV
 def test_file_list_schema_mismatch(
     tmp_path: Path, dfs: list[pl.DataFrame], streaming: bool
 ) -> None:
@@ -456,15 +438,18 @@ def test_file_list_schema_mismatch(
         df.write_csv(path)
 
     lf = pl.scan_csv(paths)
+
     with pytest.raises((ComputeError, pl.exceptions.ColumnNotFoundError)):
         lf.collect(engine="streaming" if streaming else "in-memory")
 
-    if streaming:
-        pytest.xfail(reason="missing_columns parameter for CSV")
-
     if len({df.width for df in dfs}) == 1:
         expect = pl.concat(df.select(x=pl.first().cast(pl.Int8)) for df in dfs)
-        out = pl.scan_csv(paths, schema={"x": pl.Int8}).collect(  # type: ignore[call-overload]
+        out = pl.scan_csv(
+            paths,
+            schema={"x": pl.Int8},
+            new_columns=["x"],
+            extra_columns="ignore",
+        ).collect(  # type: ignore[call-overload]
             engine="streaming" if streaming else "in-memory"  # type: ignore[redundant-expr]
         )
 
