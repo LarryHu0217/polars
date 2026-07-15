@@ -268,7 +268,6 @@ impl LazyCsvReader {
     /// Modify a schema before we run the lazy scanning.
     ///
     /// Important! Run this function latest in the builder!
-    #[must_use]
     pub fn with_schema_modify<F>(mut self, f: F) -> PolarsResult<Self>
     where
         F: Fn(Schema) -> PolarsResult<Schema>,
