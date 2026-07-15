@@ -11,7 +11,12 @@ import numpy as np
 import pytest
 
 import polars as pl
-from polars.exceptions import ComputeError, InvalidOperationError, ShapeError
+from polars.exceptions import (
+    ComputeError,
+    InvalidOperationError,
+    SchemaError,
+    ShapeError,
+)
 from polars.testing import assert_frame_equal
 
 if TYPE_CHECKING:
@@ -130,7 +135,6 @@ def test_scan_csv_schema_overwrite_and_small_dtypes_overwrite(
 
 
 @pytest.mark.parametrize("file_name", ["foods1.csv", "foods*.csv"])
-@pytest.mark.may_fail_auto_streaming  # missing_columns parameter for CSV
 def test_scan_csv_schema_new_columns_dtypes(
     io_files_path: Path, file_name: str
 ) -> None:
@@ -166,6 +170,16 @@ def test_scan_csv_schema_new_columns_dtypes(
         lf.select("colz", "colx").collect().rows()
         == df1.select("sugars", pl.col("calories").cast(pl.Int64)).rows()
     )
+
+    with pytest.raises(
+        SchemaError,
+        match=r"new_columns.*does not match number of columns in file",
+    ):
+        pl.scan_csv(
+            file_path,
+            schema_overrides=[pl.String, pl.String],
+            new_columns=["category", "calories"],
+        ).collect()
 
     # cannot have len(new_columns) > len(actual columns)
     with pytest.raises(ShapeError):
