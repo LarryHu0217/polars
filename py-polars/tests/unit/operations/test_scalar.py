@@ -1,3 +1,5 @@
+from typing import Literal
+
 import pytest
 
 import polars as pl
@@ -85,6 +87,21 @@ def test_scalar_identification_function_expr_in_binary() -> None:
 def test_scalar_rechunk_20627() -> None:
     df = pl.concat(2 * [pl.Series([1])]).filter(pl.Series([False, True])).to_frame()
     assert df.rechunk().to_series().n_chunks() == 1
+
+
+@pytest.mark.parametrize("engine", ["in-memory", "streaming"])
+def test_sorted_literal_broadcast_28387(
+    engine: Literal["in-memory", "streaming"],
+) -> None:
+    result = (
+        pl.DataFrame({"a": [1, 2, 3]})
+        .lazy()
+        .select(pl.col("a"), pl.lit(9).sort().alias("s"))
+        .collect(engine=engine)
+    )
+
+    expected = pl.DataFrame({"a": [1, 2, 3], "s": [9, 9, 9]})
+    assert_frame_equal(result, expected)
 
 
 def test_split_scalar_21581() -> None:
